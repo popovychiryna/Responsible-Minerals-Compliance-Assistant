@@ -1,0 +1,2 @@
+Section 1502 of the Dodd-Frank Act requires all US companies with annual revenues exceeding $50 million to disclose whether their products contain conflict minerals sourced from the Democratic Republic of Congo or its nine adjoining countries. Companies must file Form CM (Conflict Minerals) with the SEC by March 31 each year. The regulation covers six minerals: tin, tantalum, tungsten, gold, coltan, and wolframite.
+
