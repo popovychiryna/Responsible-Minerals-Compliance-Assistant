@@ -1,97 +1,5 @@
-# #!/usr/bin/env python
-# # coding: utf-8
-
-# # In[7]:
-
-
-# get_ipython().system('git clone https://github.com/popovychiryna/Responsible-Minerals-Compliance-Assistant.git')
-
-
-# # In[8]:
-
-
-# cd Responsible-Minerals-Compliance-Assistant
-
-
-# # In[9]:
-
-
-# get_ipython().system('ls')
-
-
-# # In[10]:
-
-
-"""
-Kaggle setup cell — run this ONCE at the top of your notebook.
-Fixes:
-  1. Installs zstd before Ollama
-  2. Starts ollama serve via subprocess (not shell &)
-  3. Pulls models
-"""
-import subprocess, time, os, sys
-
-# ── 1. Install zstd (required by new Ollama installer) ────────────────────
-print("Installing zstd...")
-subprocess.run(["apt-get", "install", "-y", "-q", "zstd"], check=True)
-
-# ── 2. Install Ollama ──────────────────────────────────────────────────────
-print("Installing Ollama...")
-result = subprocess.run(
-    "curl -fsSL https://ollama.com/install.sh | sh",
-    shell=True, capture_output=True, text=True
-)
-print(result.stdout[-500:] if result.stdout else "")
-if result.returncode != 0:
-    print("STDERR:", result.stderr[-300:])
-    raise RuntimeError("Ollama install failed")
-
-# ── 3. Start ollama serve in background (subprocess, not shell &) ──────────
-print("Starting ollama serve...")
-log_file = open("/tmp/ollama.log", "w")
-proc = subprocess.Popen(
-    ["ollama", "serve"],
-    stdout=log_file,
-    stderr=log_file,
-    start_new_session=True,   # detach from notebook process
-)
-print(f"ollama serve PID: {proc.pid}")
-time.sleep(4)   # wait for server to be ready
-
-# ── 4. Verify server is up ─────────────────────────────────────────────────
-import urllib.request
-try:
-    urllib.request.urlopen("http://localhost:11434", timeout=5)
-    print("Ollama server: OK")
-except Exception as e:
-    print(f"Server not responding yet: {e}")
-    print("Last log lines:")
-    with open("/tmp/ollama.log") as f:
-        print(f.read()[-500:])
-
-# ── 5. Pull models ─────────────────────────────────────────────────────────
-for model in ["qwen2.5:7b", "qwen2.5:14b"]:
-    print(f"\nPulling {model} (this may take a few minutes)...")
-    r = subprocess.run(["ollama", "pull", model],
-                       capture_output=False)   # show progress live
-    if r.returncode != 0:
-        print(f"WARNING: failed to pull {model}")
-
-# ── 6. Fix Dependency Conflicts ───────────────────────────────────────────
-print("\nFixing dependency conflicts for RAPIDS...")
-subprocess.run([sys.executable, "-m", "pip", "install", "-q",
-    "numba>=0.60.0,<0.62.0",
-    "numba-cuda>=0.22.2,<0.23.0"
-], check=True)
-
-# Then continue with your existing pip installs
-print("\nInstalling additional Python packages...")
-subprocess.run([sys.executable, "-m", "pip", "install", "-q",
-    "sentence-transformers", "faiss-cpu", "rank-bm25",
-    "PyMuPDF", "beautifulsoup4", "pydantic",
-], check=True)
-
-print("\n✓ Setup complete. Run rag_pipeline.py next.")
+#!/usr/bin/env python3
+# coding: utf-8
 
 
 
@@ -143,7 +51,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger("rag")
 
 # ── paths ──────────────────────────────────────────────────────────────────
-BASE_DIR    = Path("/kaggle/working/Responsible-Minerals-Compliance-Assistant")
+BASE_DIR    = Path(__file__).parent.resolve()
 DATA_DIR    = BASE_DIR / "data"
 RESULTS_DIR = BASE_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1245,26 +1153,31 @@ def build_index() -> HybridIndex:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Responsible Minerals Compliance Assistant",
+        epilog=(
+            "Examples:\n"
+            "  python run_eval.py --demo          # 3-case live demo\n"
+            "  python run_eval.py --eval          # full evaluation + graphs\n"
+            "  python run_eval.py --query \"...\""
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--eval",  action="store_true", help="Run full evaluation suite")
     parser.add_argument("--demo",  action="store_true", help="Run 3-case demo")
     parser.add_argument("--query", type=str, default=None, help="Single question")
-
-    # Use parse_known_args() to ignore the Jupyter/IPython kernel -f argument
-    args, unknown = parser.parse_known_args()
+    args = parser.parse_args()
 
     build_index()
 
     if args.eval:
-        run_evaluation(save_path=RESULTS_DIR / "eval_results.json")
+        results = run_evaluation(save_path=RESULTS_DIR / "eval_results.json")
+        plot_results(results, save_dir=RESULTS_DIR)
     elif args.query:
         res = answer_question(args.query)
         print(json.dumps(asdict(res.response), indent=2, ensure_ascii=False))
     else:
         interactive_demo()
-
-    results = run_evaluation(save_path=RESULTS_DIR / "eval_results.json")
-    plot_results(results, save_dir=RESULTS_DIR)
 
 
 
