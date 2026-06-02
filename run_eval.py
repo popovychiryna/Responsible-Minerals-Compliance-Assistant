@@ -7,11 +7,10 @@
 Responsible Minerals Compliance Assistant — RAG Pipeline
 Level 1: Hybrid RAG + ReAct Agent + Structured Output + LLM-as-a-Judge
 =======================================================================
-100% FREE — runs entirely locally via Ollama (no API keys needed).
 
 Tested on Kaggle T4 (16 GB VRAM):
   Agent model : qwen2.5:7b   (~5 GB in 4-bit)
-  Judge model : qwen2.5:14b  (~9 GB in 4-bit)  — satisfies "larger/different model" requirement
+  Judge model : qwen2.5:14b  (~9 GB in 4-bit) 
   Embed model : BAAI/bge-small-en-v1.5 (CPU, ~90 MB)
   Reranker    : cross-encoder/ms-marco-MiniLM-L-6-v2 (CPU, ~85 MB)
 
@@ -24,9 +23,9 @@ Kaggle setup (first cell):
   !pip install -q sentence-transformers faiss-cpu rank-bm25 PyMuPDF beautifulsoup4 pydantic
 
 Run:
-  python rag_pipeline.py --demo         # success + abstain + off-topic demo
-  python rag_pipeline.py --eval         # full eval → results/eval_results.json
-  python rag_pipeline.py --query "..."  # single question
+  python run_eval.py --demo         # success + abstain + off-topic demo
+  python run_eval.py --eval         # full eval → results/eval_results.json
+  python run_eval.py --query "..."  # single question
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
